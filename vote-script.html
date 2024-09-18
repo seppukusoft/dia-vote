@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<html data-theme="dark"></html>
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .js .element{visibility:hidden}
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+        }
+        *
+        {
+        text-align: center !important;
+        margin: auto !important;
+        }
+        p, h1, h2, button{
+            line-height: 3;
+        }
+        #title1, #title2, #title3 {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <br>
+    <h1><u>Dia Election Tabulator</u></h1> <br>
+    <h2 id="step">Step 1</h2>
+    <p id="sub">Import the election results as a CSV file below:</p>
+    <input type="file" id="csvFileInput" />
+    <table id="tableContainer" class="striped"></table>
+    <button id="continueButton" style="display:none;">Continue</button>
+    <div id="dropdownContainer"></div>
+    <button id="submitButton" style="display:none;">Submit</button>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="csvparser.js"></script>
+    <div id="title1"></div>
+    <div id="display1"></div>
+    <br>
+    <div id="chart1"></div>
+    <div id="title2"></div>
+    <div id="display2"></div>
+    <br>
+    <div id="chart2"></div>
+    <div id="title3"></div>
+    <div id="display3"></div>
+    <br>
+    <div id="chart3"></div>
+    <br>
+    <button id="reloadButton" style="display: none;" onclick="location.reload();">New Calculation</button>
+</body>
+</html>
