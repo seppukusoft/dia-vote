@@ -217,6 +217,19 @@ function testFPTP(columnArray) {
         document.getElementById("display1").append(`${name}: ${count} vote(s) (${percentage}%)`);
         document.getElementById("display1").appendChild(document.createElement('br'));
     });
+    // Display winner
+    let winner = null;
+    let maxVotes = 0;
+    for (const [name, count] of Object.entries(nameCounts)) {
+        if (count > maxVotes) {
+            maxVotes = count;
+            winner = name;
+        }
+    }   
+    if (winner) {
+        document.getElementById("display1").append('Winner: ' + winner);
+    }
+    return result;
 }
 // Sainte-Laguë function
 function testSL(columnArray) {
