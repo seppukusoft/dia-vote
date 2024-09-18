@@ -265,7 +265,6 @@ function testFPTP(columnArray) {
     if (winner) {
         document.getElementById("display1").append('Winner: ' + winner);
     }
-    return result;
 }
 // Sainte-Laguë function
 function testSL(columnArray) {
@@ -373,7 +372,11 @@ function pieChart(labels, values, location){
         legend: {
             x: 1,
             y: 0.5
-            }
+            },
+        paper_bgcolor: '#13171f',
+        font: {
+            color: 'white'
+          }
     };
       
     Plotly.newPlot(location, data, layout);
