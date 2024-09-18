@@ -28,24 +28,60 @@ function parseCSV(csv) {
     const rows = csv.trim().split('\n');
     if (rows.length === 0) return;
 
-    headers = rows[0].split(',').map(header => header.replace(/(^"|"$)/g, '').trim()); // Remove quotes from headers
-    csvData = rows.slice(1).map(row => row.split(',').map(cell => cell.replace(/(^"|"$)/g, '').trim())); // Remove quotes from data
-    displayCSVTable(csvData);
+    // Parse headers
+    headers = splitCSVLine(rows[0]);
+    headers = headers.map(header => header.replace(/(^"|"$)/g, '').trim());
 
     columns = {};
     headers.forEach(header => {
         columns[header] = [];
     });
 
-    rows.slice(1).forEach(row => {
-        const cells = row.split(',').map(cell => cell.replace(/(^"|"$)/g, '').trim()); // Split by commas and remove quotes again just in case
+    // Parse data rows
+    csvData = rows.slice(1).map(row => {
+        const cells = splitCSVLine(row).map(cell => cell.replace(/(^"|"$)/g, '').trim());
         cells.forEach((cell, index) => {
             const header = headers[index];
             if (header) {
-                columns[header].push(cell); // Stores table headers to global array
+                columns[header].push(cell);
             }
         });
+        return cells;
     });
+
+    displayCSVTable(csvData);
+}
+
+// Helper function to split a CSV line into fields
+function splitCSVLine(line) {
+    const result = [];
+    let inQuotes = false;
+    let field = '';
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+
+        if (char === '"' && inQuotes && nextChar === '"') {
+            // Handle escaped double quotes
+            field += '"';
+            i++; // Skip the next quote
+        } else if (char === '"') {
+            // Toggle the inQuotes flag
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            // End of field
+            result.push(field);
+            field = '';
+        } else {
+            // Regular character
+            field += char;
+        }
+    }
+    
+    // Add the last field
+    result.push(field);
+    return result;
 }
 
 function displayCSVTable(data) {
@@ -184,8 +220,8 @@ function handleSubmit() {
     headers.forEach(header => {
         const dropdownValue = results[header]; // Checks dropdown values, runs relevant formula function
         if (dropdownValue === 'FPTP') {
-            testFPTP(columns[header]);
             document.getElementById("title1").append(`FPTP Result for "${header}":`);
+            testFPTP(columns[header]);
         } else if (dropdownValue === 'Sainte-Lague') {
             testSL(columns[header]);
         }
@@ -271,7 +307,7 @@ function testSL(columnArray) {
         }
     }
 
-    const totalSeats = Math.floor(columnArray.length / 5);
+    const totalSeats = Math.round(columnArray.length / 5);
     const partySeats = {};
     const divisors = {};
     Object.keys(eligibleParties).forEach(party => {
