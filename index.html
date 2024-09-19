@@ -35,8 +35,11 @@
     <br>
     <h1><u>Dia Election Tabulator</u></h1> <br>
     <h2 id="step">Step 1</h2>
-    <p id="sub">Import the election results as a CSV file below:</p>
-    <input type="file" id="csvFileInput" />
+    <p id="ver">Import <u>voter verification</u> as a CSV file below:</p>
+    <input type="file" id="usernameFileInput">
+    <button id="skipVerificationButton" style="display: block;">Skip Verification (manual)</button>
+    <p id="sub" style="display: none;">Import the <u>election results</u> as a CSV file below:</p>
+    <input type="file" id="csvFileInput" style="display: none;">
     <table id="tableContainer" class="striped"></table>
     <button id="continueButton" style="display:none;">Continue</button>
     <div id="dropdownContainer"></div>

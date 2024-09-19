@@ -1,11 +1,16 @@
 document.getElementById('csvFileInput').addEventListener('change', handleFileSelect, false);
 document.getElementById('submitButton').addEventListener('click', handleSubmit, false);
+document.getElementById('usernameFileInput').addEventListener('change', handleUsernameFileSelect, false);
+document.getElementById('skipVerificationButton').addEventListener('click', skipVerification, false);
 
+let validUsernames = []; // To store the list of valid usernames
+let usernameColumnIndex = -1; // Modify global variables to identify the username column
 let columns = {}; // To store parsed CSV data
 let headers = []; // To store headers globally for access
 let csvData = []; // To store the entire CSV data
 
-function handleFileSelect(event) {
+// Handle the selection of the usernames CSV file
+function handleUsernameFileSelect(event) {
     const file = event.target.files[0];
     if (!file) {
         return;
@@ -14,14 +19,54 @@ function handleFileSelect(event) {
     const reader = new FileReader();
     reader.onload = function (e) {
         const text = e.target.result;
-        parseCSV(text); // Parse CSV file via function
+        parseUsernamesCSV(text); // Parse the usernames CSV file
 
+        // Show the election file upload input
+        document.getElementById('csvFileInput').style.display = 'block';
+        document.getElementById('sub').style.display = 'block';
+        document.getElementById('skipVerificationButton').style.display = 'none';
+    };
+    reader.readAsText(file);
+}
+
+// Parse the usernames CSV file and store the list
+function parseUsernamesCSV(csv) {
+    const rows = csv.trim().split('\n');
+    validUsernames = rows.map(row => row.trim().toLowerCase()); // Store usernames in lowercase for easy comparison
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const text = e.target.result;
+        parseCSV(text); // Parse the election CSV file
         document.getElementById('csvFileInput').style.display = 'none'; // Hide file input
+        document.getElementById('usernameFileInput').style.display = 'none';
+        document.getElementById('ver').style.display = 'none';
         document.getElementById('continueButton').style.display = 'block'; // Show "continue" button
         document.getElementById('step').innerText = 'Step 2'; // Change step and subtitle
         document.getElementById('sub').innerText = "Uncheck any unverified votes, then hit continue at the bottom.";
     };
     reader.readAsText(file);
+}
+
+function skipVerification() {
+    // Hide verification elements
+    document.getElementById('usernameFileInput').style.display = 'none';
+    document.getElementById('ver').style.display = 'none';
+    document.getElementById('skipVerificationButton').style.display = 'none';
+    
+    // Show the election file upload input
+    document.getElementById('csvFileInput').style.display = 'block';
+    document.getElementById('sub').style.display = 'block';
+
+    // Assume all rows are verified
+    validUsernames = []; // Clear valid usernames to skip verification
+    usernameColumnIndex = -1; // Reset username column index
 }
 
 function parseCSV(csv) {
@@ -31,11 +76,16 @@ function parseCSV(csv) {
     // Parse headers
     headers = splitCSVLine(rows[0]);
     headers = headers.map(header => header.replace(/(^"|"$)/g, '').trim());
-
     columns = {};
     headers.forEach(header => {
         columns[header] = [];
     });
+
+    usernameColumnIndex = headers.findIndex(header => header.toLowerCase().includes('username'));
+    if (usernameColumnIndex === -1) {
+        alert("No column with 'username' in the header found. Please select the username column manually.");
+        return;
+    }
 
     // Parse data rows
     csvData = rows.slice(1).map(row => {
@@ -49,7 +99,27 @@ function parseCSV(csv) {
         return cells;
     });
 
+    validateUsernames();
     displayCSVTable(csvData);
+}
+
+function validateUsernames() {
+    if (usernameColumnIndex === -1) return; // No username column selected
+
+    csvData = csvData.map((row, rowIndex) => {
+        if (validUsernames.length === 0) {
+            // If skipping verification, mark all rows as valid
+            return { data: row, invalid: false };
+        }
+    
+        const username = row[usernameColumnIndex].toLowerCase();
+        if (!validUsernames.includes(username)) {
+            // Mark this row as invalid
+            return { data: row, invalid: true };
+        } else {
+            return { data: row, invalid: false };
+        }
+    });
 }
 
 // Helper function to split a CSV line into fields
@@ -84,13 +154,14 @@ function splitCSVLine(line) {
     return result;
 }
 
-function displayCSVTable(data) {
+function displayCSVTable(data, verificationSkipped = false) {
     const tableContainer = document.getElementById('tableContainer');
     tableContainer.innerHTML = ''; // Clear previous content
-    // Construct table to remove unverified
+    
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const tbody = document.createElement('tbody');
+
     // Adds headers from file
     const headerRow = document.createElement('tr');
     headers.forEach(header => {
@@ -98,35 +169,62 @@ function displayCSVTable(data) {
         th.textContent = header;
         headerRow.appendChild(th);
     });
+
     // Add checkbox column
     const checkboxHeader = document.createElement('th');
     checkboxHeader.textContent = 'Include';
     headerRow.appendChild(checkboxHeader);
     thead.appendChild(headerRow);
-    data.forEach((row, rowIndex) => {
+
+    // Create table rows
+    data.forEach((rowObj, rowIndex) => {
+        const row = rowObj.data;
+        const isInvalid = rowObj.invalid;
         const tr = document.createElement('tr');
         row.forEach(cell => {
             const td = document.createElement('td');
             td.textContent = cell;
+
+            // Apply red text for initially invalid rows only if verification was not skipped
+            if (isInvalid && !verificationSkipped) {
+                td.style.color = 'red';
+            }
             tr.appendChild(td);
         });
 
         const checkboxTd = document.createElement('td');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.checked = true;
+        // Automatically check all rows if verification was skipped
+        checkbox.checked = verificationSkipped || !isInvalid;
+
+        // Add an event listener to the checkbox for dynamic row color change
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                // Reset color to default when checked
+                row.forEach((cell, index) => {
+                    tr.children[index].style.color = '';
+                });
+            } else {
+                // Change text color to red when unchecked
+                row.forEach((cell, index) => {
+                    tr.children[index].style.color = 'red';
+                });
+            }
+        });
         checkboxTd.appendChild(checkbox);
         tr.appendChild(checkboxTd);
         tbody.appendChild(tr);
     });
-    // Fill table
+
     table.appendChild(thead);
     table.appendChild(tbody);
     tableContainer.appendChild(table);
 
     document.getElementById('continueButton').style.display = 'block'; // Show continue button
 }
-// Check for verify complete + change step, sub, and element visibity
+
+// Check for verify complete + change step, sub, and element visibility
 document.getElementById('continueButton').addEventListener('click', function () {
     const filteredData = filterCSVRows();
     displayDropdownMenu(filteredData);
@@ -144,13 +242,19 @@ function filterCSVRows() {
     rows.forEach((row, rowIndex) => {
         const checkbox = row.querySelector('input[type="checkbox"]');
         if (checkbox.checked) {
-            const rowData = csvData[rowIndex];
+            const rowData = csvData[rowIndex].data; // Extract the data part of the row
             filteredData.push(rowData);
         }
     });
 
+    // Update columns with only the filtered data
+    headers.forEach((header, index) => {
+        columns[header] = filteredData.map(row => row[index]);
+    });
+
     return filteredData;
 }
+
 // Creates dropdowns for formula selection
 function displayDropdownMenu(filteredData) {
     const dropdownContainer = document.getElementById('dropdownContainer');
@@ -178,21 +282,13 @@ function displayDropdownMenu(filteredData) {
         dropdown.appendChild(option2);
         dropdown.appendChild(option3);
 
-        label.htmlFor = dropdown.id;
-        label.textContent = header + ' '; 
-        label.appendChild(dropdown);
+        label.textContent = header;
         dropdownContainer.appendChild(label);
-        dropdownContainer.appendChild(document.createElement('br'));
-    });
-
-    columns = {};
-    headers.forEach((header, index) => {
-        columns[header] = filteredData.map(row => row[index]);
+        dropdownContainer.appendChild(dropdown);
     });
 }
 
 function handleSubmit() {
-    // Makes sure at least one formula is used
     let allIgnored = true;
     headers.forEach(header => {
         const dropdown = document.getElementById(`dropdown-${header.replace(/\s+/g, '-')}`);
@@ -204,7 +300,7 @@ function handleSubmit() {
         alert("Error: You must select at least one column for processing.");
         return;
     }
-    // Displays results
+
     document.getElementById('submitButton').style.display = 'none';
     document.getElementById('dropdownContainer').style.display = 'none';
     document.getElementById('reloadButton').style.display = 'block';
@@ -213,12 +309,12 @@ function handleSubmit() {
     
     const results = {};
     headers.forEach(header => {
-        const dropdown = document.getElementById(`dropdown-${header.replace(/\s+/g, '-')}`); // Removes quotes YET AGAIN
+        const dropdown = document.getElementById(`dropdown-${header.replace(/\s+/g, '-')}`);
         results[header] = dropdown.value;
     });
 
     headers.forEach(header => {
-        const dropdownValue = results[header]; // Checks dropdown values, runs relevant formula function
+        const dropdownValue = results[header];
         if (dropdownValue === 'FPTP') {
             document.getElementById("title1").append(`FPTP Result for "${header}":`);
             testFPTP(columns[header]);
@@ -227,6 +323,7 @@ function handleSubmit() {
         }
     });
 }
+
 // FPTP function
 function testFPTP(columnArray) {
     const nameCounts = {};
@@ -243,6 +340,21 @@ function testFPTP(columnArray) {
     for (const [name, count] of Object.entries(nameCounts)) {
         namesArray.push(name);
         countsArray.push(count);
+    }
+    // Count blank votes
+    let blankVotes = 0;
+    columnArray.forEach(name => {
+        if (name.trim() === "") {
+            blankVotes++;
+        }
+    });
+
+    // If blank votes exist, add them to the results
+    if (blankVotes > 0) {
+        const blankPercentage = ((blankVotes / columnArray.length) * 100).toFixed(2);
+        // Add to pie chart data
+        namesArray.push("Blank/Invalid");
+        countsArray.push(blankVotes);
     }
     // Creates chart
     pieChart(namesArray, countsArray, "chart1");
@@ -266,8 +378,14 @@ function testFPTP(columnArray) {
         document.getElementById("display1").append('Winner: ' + winner);
     }
 }
+
 // Sainte-Laguë function
 function testSL(columnArray) {
+    if (!Array.isArray(columnArray) || columnArray.length === 0) {
+        console.error("Invalid column array passed to testSL:", columnArray); // Error handling
+        return;
+    }
+
     const partyCounts = {};
     columnArray.forEach(party => {
         party = party.trim(); 
@@ -283,13 +401,16 @@ function testSL(columnArray) {
         partiesArray.push(party);
         countsArray.push(count);
     }
+
     // Creates chart
     pieChart(partiesArray, countsArray, "chart2");
+
     // Sets title2
     const display2 = document.getElementById("display2");
     display2.innerHTML = ''; 
     title2.appendChild(document.createElement('br'));
     title2.append("Party Vote Counts:");
+
     // Iterates results
     partiesArray.forEach((party, index) => {
         const count = countsArray[index];
@@ -297,7 +418,8 @@ function testSL(columnArray) {
         display2.append(`${party}: ${count} vote(s) (${percentage}%)`);
         display2.appendChild(document.createElement('br'));
     });
-    // S-L formaula
+
+    // S-L formula
     const eligibleParties = {};
     for (const [party, count] of Object.entries(partyCounts)) {
         const percentage = (count / columnArray.length) * 100;
@@ -331,6 +453,7 @@ function testSL(columnArray) {
             divisors[highestParty] += 2;
         }
     }
+
     // Sets title3
     document.getElementById("title3").appendChild(document.createElement('br'));
     document.getElementById("title3").append("Seat allocation:");
@@ -341,11 +464,13 @@ function testSL(columnArray) {
         allocatedPartiesArray.push(party);
         seatsArray.push(seats);
     }
+
     // Creates chart
     pieChart(allocatedPartiesArray, seatsArray, "chart3");
 
     const display3 = document.getElementById("display3");
     display3.innerHTML = ''; 
+
     // Iterates results
     allocatedPartiesArray.forEach((party, index) => {
         const seats = seatsArray[index];
@@ -353,6 +478,7 @@ function testSL(columnArray) {
         display3.appendChild(document.createElement('br'));
     });
 }
+
 // Chart draw function
 function pieChart(labels, values, location){
     var data = [{
