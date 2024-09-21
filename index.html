@@ -28,6 +28,11 @@
         }
         svg .main-svg {
             background: #13171f; 
+        }        
+        body {
+            max-width: 75%;  /* Prevents content from stretching too wide */
+            padding: 20px;
+            border-radius: 10px;     /* Optional: rounded corners */
         }
     </style>
 </head>
@@ -45,10 +50,12 @@
     <div id="dropdownContainer"></div>
     <button id="submitButton" style="display:none;">Submit</button>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="csvparser.js"></script>
     <div id="title1"></div>
     <div id="display1"></div>
+    <br>
     <div id="chart1"></div>
     <div id="title2"></div>
     <div id="display2"></div>
