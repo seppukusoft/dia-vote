@@ -357,7 +357,7 @@ function testFPTP(columnArray) {
         countsArray.push(blankVotes);
     }
     // Creates chart
-    pieChart(namesArray, countsArray, "chart1");
+    pieChart(namesArray, countsArray, "chart1", 300, 500);
     // Iterates results
     namesArray.forEach((name, index) => {
         const count = countsArray[index];
@@ -376,6 +376,7 @@ function testFPTP(columnArray) {
     }   
     if (winner) {
         document.getElementById("display1").append('Winner: ' + winner);
+        document.getElementById("display1").appendChild(document.createElement('br'));
     }
 }
 
@@ -403,7 +404,7 @@ function testSL(columnArray) {
     }
 
     // Creates chart
-    pieChart(partiesArray, countsArray, "chart2");
+    pieChart(partiesArray, countsArray, "chart2", 500, 800);
 
     // Sets title2
     const display2 = document.getElementById("display2");
@@ -466,7 +467,7 @@ function testSL(columnArray) {
     }
 
     // Creates chart
-    pieChart(allocatedPartiesArray, seatsArray, "chart3");
+    pieChart(allocatedPartiesArray, seatsArray, "chart3", 500, 800);
 
     const display3 = document.getElementById("display3");
     display3.innerHTML = ''; 
@@ -477,10 +478,30 @@ function testSL(columnArray) {
         display3.append(`${party}: ${seats} seat(s)`);
         display3.appendChild(document.createElement('br'));
     });
+
+    confetti({
+        particleCount: 1000,
+        spread: 180,
+        gravity: 0.8,
+        origin: { y: 0.6 },
+        colors: [
+            '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#800000', '#008000', '#000080',
+            '#808000', '#800080', '#008080', '#FF8080', '#80FF80', '#8080FF', '#FFFF80', '#FF80FF', '#80FFFF',
+            '#C0C0C0', '#FF6347', '#4682B4', '#DAA520', '#32CD32', '#BA55D3', '#3CB371', '#FF4500', '#1E90FF',
+            '#D2691E', '#ADFF2F', '#9932CC', '#8B4513', '#6495ED', '#FF1493', '#00FA9A', '#FFD700', '#7CFC00',
+            '#8A2BE2', '#FF69B4', '#87CEFA', '#40E0D0', '#CD5C5C', '#20B2AA', '#7B68EE', '#FA8072', '#B22222',
+            '#00BFFF', '#DC143C', '#48D1CC', '#9370DB', '#FFDAB9'
+          ],
+        startVelocity: 40,      
+        scalar: 1.2,              
+        drift: 0.05,              
+        shapes: ['circle', 'square'],  
+        zIndex: 9999 
+      });
 }
 
 // Chart draw function
-function pieChart(labels, values, location){
+function pieChart(labels, values, location, h, w){
     var data = [{
         values: values,
         labels: labels,
@@ -491,8 +512,8 @@ function pieChart(labels, values, location){
     }];
       
     var layout = {
-        height: 500,
-        width: 800,
+        height: h,
+        width: w,
         margin: {"t": 0, "b": 0, "l": 0, "r": 0},
         showlegend: true,
         legend: {
